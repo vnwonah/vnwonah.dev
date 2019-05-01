@@ -1,7 +1,7 @@
 ---
 title: Running an ASP.NET Core Web Application on Alibaba Cloud Elastic Computing Service (ECS)
 toc: true
-thumbnail: https://media.rehansaeed.com/rehansaeed/2014/02/NET-1024x576.png
+#thumbnail: https://media.rehansaeed.com/rehansaeed/2014/02/NET-1024x576.png
 date: 2019-05-01 07:25:02
 category: Web
 tags:
