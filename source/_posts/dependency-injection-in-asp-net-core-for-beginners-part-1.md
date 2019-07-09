@@ -23,6 +23,8 @@ After reading this article you will know the following:
 2. Why we need dependency Injection.
 3. How we use/do dependency injection in dotnet core.
 
+<!--More-->
+
 ## Prerequisite Knowledge
 
 ***
