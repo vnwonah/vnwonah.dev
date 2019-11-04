@@ -50,7 +50,7 @@ An appropriate way to handle this would be to start processing the student resul
 
 ## Create a Background Job with Hangfire in ASP.Net Core
 
-We will create an ASP.Net Core Web Application in this section. This Application will enable a user create a Single Todo Item. 
+We will create an ASP.Net Core Web Application in this section. This Application will enable a user create a Single Todo Item. Link to sample application is provided at end.
 
 We will extend the application to accept a CSV (or Microsoft Excel) file containg a list of todo items. This items will be added to the application using background jobs. You can follow along with the steps below or get the complete project on github at : 
 
@@ -137,5 +137,165 @@ app.UseHangfireDashboard();
 ![Hangfire Dashboard](https://res.cloudinary.com/vnwonah/image/upload/v1572832592/hangfire_enqueued_xgitcq.png)
 We currently have no sceduled or complete jobs.
 
-10. Next is to create a few jobs. For this we will upload a list of todo Items in a csv file and use a background job to add them to the Database.
+10. Next is to create a few jobs. For this we will upload a list of todo Items in a csv file and use a background job to add them to the Database. Right lclick on the project in solution explorer and add a new folder, call it Services, then add a class called TodoService to this folder. Add the code below to the class;
+{% codeblock lang:C# %}
+using Hangfire;
+using System;
+using System.IO;
 
+public class TodoService
+{
+    private AppDbContext _context;
+    public TodoService(AppDbContext context)
+    {
+        _context = context;
+    }
+    public void ProcessUploadedFile(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            throw new ArgumentException();
+        //we are throwing an argument if an invalid filepath is given to us to process
+        StreamReader file = null;
+        try
+        {
+            string line;
+            file = new StreamReader(filePath);
+            while ((line = file.ReadLine()) != null)
+            {
+                //we are getting eac part of the todo into an array. 
+                //parts[0] will be the Todo Text and parts[1] will be the Due date
+                var parts = line.Split(",");
+                //first part of this if statement checks that the Todo Text is a valid non empty text
+                //second part checks that we are passing in a valid date time
+                if(!string.IsNullOrWhiteSpace(parts?[0]) && DateTime.TryParse(parts?[1], out DateTime date))
+                {
+                    //this line creates a background job for each Todo Item
+                    BackgroundJob.Enqueue(() => SaveNewTodoItem(parts[0], date));
+                }
+            }
+            file.Close();
+        }
+        catch (Exception e)
+        {
+        }
+        finally
+        {
+            if (file is object)
+                file.Close();
+            //delete the file
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
+    }
+    public async Task SaveNewTodoItem(string text, DateTime dueDate)
+    {
+        var todo = new Todo
+        {
+            Text = text,
+            DueDate = dueDate
+        };
+        await _context.AddAsync(todo);
+        await _context.SaveChangesAsync();
+    }
+}
+{% endcodeblock %}
+11. The class we added above reads a file to the www directory of our website, picks out individual todo items from the lines in the file and uses a background job to add them to the database. We have just one bit left, how to upload file this class is going to read from.
+12. Goto the TodosController class and add the following using statements
+{% codeblock lang:C# %}
+using System.IO;
+using Hangfire;
+{% endcodeblock %}
+We need to inject the TodoService into the controller
+{% codeblock lang:C# %}
+private readonly AppDbContext _context;
+private readonly TodoService _todoService
+public TodosController(
+    AppDbContext context,
+    TodoService todoService)
+{
+    _context = context;
+    _todoService = todoService;
+}
+{% endcodeblock %}
+Now we need to add the action that will recieve the uploaded file, add the action below to the controller
+{% codeblock lang:C# %}
+[HttpPost]
+public async Task<IActionResult> UploadFile(IFormFile file)
+{
+    try
+    {
+        if (file == null || file.Length == 0)
+        {
+            TempData["error"] = "File not Selected";
+            return RedirectToAction("Index");
+        }
+        var path = Path.Combine(
+                    Directory.GetCurrentDirectory(), "wwwroot",
+                    file.FileName)
+        using (var stream = new FileStream(path, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+        BackgroundJob.Enqueue(() => _todoService.ProcessUploadedFile(path));
+        TempData["success"] = "The Todo Items are being created"
+    }
+    catch (Exception)
+    {
+        TempData["error"] = "An Error occured, please retry";
+    }
+    return RedirectToAction("Index");
+}
+{% endcodeblock %}
+Replace the Index Action with the code below
+{% codeblock lang:C# %}
+public async Task<IActionResult> Index()
+{
+    if(TempData["success"] is object)
+    {
+        ViewBag.Success = TempData["success"];
+    }
+    else if(TempData["error"] is object)
+    {
+        ViewBag.Error = TempData["error"];
+    }
+    TempData.Clear();
+    return View(await _context.Todo.ToListAsync());
+}
+{% endcodeblock %}
+Finally we will modify our views to handle the file upload process. Open the Views Folder, Then Todo and the Index.cshtml file. Add the foloiwng line before **Create New**
+{% codeblock lang:HTML %}
+@if (ViewBag.Success is object)
+{
+    <div class="alert alert-success" role="alert">
+        @ViewBag.Success
+    </div>
+}
+else if (ViewBag.Error is object)
+{
+    <div class="alert alert-danger" role="alert">
+        @ViewBag.Error
+    </div>
+}
+<row>
+    <div class="col-md-12">
+        <form method="post" enctype="multipart/form-data" asp-controller="Todos" asp-action="UploadFile">
+            <div class="form-group">
+                <div class="col-md-10">
+                    <p>Upload one or more files using this form:</p>
+                    <input type="file" name="file" />
+                    <input type="submit" value="Upload" />
+                </div>
+            </div>
+        </form>
+    </div>
+</row>
+{% endcodeblock %}
+
+13.  Now run the application and upload a file, you can dowload the sample csv from [here](https://eumcpq.ch.files.1drv.com/y4mpux2_ku8hcP8IkuEZ7yd6MAsLg0jF_pJBNM8NxWJluLSfeTv8diRTHrZrC9G5mbwMHc5E2MNkXYM6035H_B-QPFDAUb7_iI2ZPw-s4994eBF4B5lho9ElGq4pTSW3j6vtLqDibzVf5FeJitFaLln2-gBkWGI6QODjiXF-d7XbkVgifBnU58BdPMXX4ujDbIZOxF-iudsPDDnLVcHDcA-FAMgiwT-r6Pmonx2g__mj2Y/TodoList.csv?download&psid=1). After the page refreshes navigate to https://localhost:5001/hangfire/jobs/succeeded (remember to replace 5001 with your own port number) and you will see about 1055 completed jobs. You can click on any of those jobs to see details.
+14.  Navigate back to  https://localhost:5001/todos and you should see anout 1055 created todo items, all saved to the database.
+
+## Conclusion
+
+We now have hangfire implemented in our application. You can download the sample application [here](https://github.com/vnwonah/ASPNetCoreHangfire) In this case we are processing just 1000 items but in a real scenario it could be several hundred thousands, background jobs are a powerful concept for such scenarios. If you have any questions or comments leave a comment or reach my email vnwonah@outlook.com.
+
+If you enjoy my articles you can also buy me a coffee via Paypal!
