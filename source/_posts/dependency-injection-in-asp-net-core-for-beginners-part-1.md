@@ -9,6 +9,7 @@ tags:
     - web application
     - web development
     - dependency injection
+    - architecture
 ---
 
 There are a lot of concepts that beginner programmers encounter when they start to go beyond writing simple console applications in dotnet and maybe try to build a website. One of such concepts is Dependency Injection (DI).
