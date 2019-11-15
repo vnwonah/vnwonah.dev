@@ -124,7 +124,7 @@ widgets:
         # Title of the author to be shown in the profile widget
         author_title: Software Engineer
         # Author's current location to be shown in the profile widget
-        location: Abuja, Nigeria
+        location: Kaunas, Lithuania
         # Path or URL to the avatar to be shown in the profile widget
         avatar: /images/vnwonah.jpeg
         # Email address for the Gravatar to be shown in the profile widget
