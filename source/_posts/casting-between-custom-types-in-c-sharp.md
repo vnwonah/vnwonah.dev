@@ -9,7 +9,7 @@ tags:
     - architecture
 ---
 
-This is a follow up from the article on [Casting Custom Types To C# Built-In Types.](casting-custom-types-to-c-sharp-built-in-types.md)
+This is a follow up from the article on [Casting Custom Types To C# Built-In Types.](~/../casting-custom-types-to-c-sharp-built-in-types.md)
 
 In the previous article we looked at how we would take a custom object like a Class or a Struct and cast it to a C# built-in like a bool. In this article we will look at how to cast from one custom type to another.
 
