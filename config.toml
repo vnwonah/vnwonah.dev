@@ -1,0 +1,7 @@
+baseURL = "http://vnwonah.dev"
+languageCode = "en-us"
+title = "Code, Opinions & Stuff"
+theme = "liquorice"
+
+[params]
+    author = "Vincent Nwonah"

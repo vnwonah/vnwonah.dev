@@ -1,1 +1,4 @@
 
+[submodule "themes/liquorice"]
+	path = themes/liquorice
+	url = https://github.com/eliasson/liquorice.git
