@@ -1,1 +1,0 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/196d9363-a8c2-45b9-a197-c924ae8b18cc/deploy-status)](https://app.netlify.com/sites/amazing-euclid-02e4d4/deploys)
